@@ -100,18 +100,26 @@ vec3 getShadowing(
       floor(gl_FragCoord.xy),
       frameCounter
     );
-    // scatter falloff
-    float scatterSampleAngle = noise * 2 * PI;
-    vec2 scatterSampleOffset =
-      vec2(sin(scatterSampleAngle), cos(scatterSampleAngle)) *
-      (sampleRadius / SHADOW_SAMPLES);
-    float blockerDepthDifference = max0(
-      shadowScreenPos.z -
-        texture(shadowtex0, shadowScreenPos.xy + scatterSampleOffset).r
-    );
-    float blockerDistance = blockerDepthDifference * 512;
 
-    scatter *= mix(1.0 - smoothstep(blockerDistance, 0.0, 2.0), 1.0, distFade);
+    // scatter falloff: only pay for the blocker-depth lookup on translucent
+    // (SSS) geometry where scatter actually contributes
+    if (scatter > 1e-6) {
+      float scatterSampleAngle = noise * 2 * PI;
+      vec2 scatterSampleOffset =
+        vec2(sin(scatterSampleAngle), cos(scatterSampleAngle)) *
+        (sampleRadius / SHADOW_SAMPLES);
+      float blockerDepthDifference = max0(
+        shadowScreenPos.z -
+          texture(shadowtex0, shadowScreenPos.xy + scatterSampleOffset).r
+      );
+      float blockerDistance = blockerDepthDifference * 512;
+
+      scatter *= mix(
+        1.0 - smoothstep(blockerDistance, 0.0, 2.0),
+        1.0,
+        distFade
+      );
+    }
 
     if (faceNoL > 1e-6) {
       for (int i = 0; i < SHADOW_SAMPLES; i++) {

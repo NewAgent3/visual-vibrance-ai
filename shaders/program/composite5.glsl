@@ -81,6 +81,7 @@ void main(){
 
     #include "/lib/dh.glsl"
     #include "/lib/util/packing.glsl"
+    #include "/lib/voxel/voxelMap.glsl"
 
     /* RENDERTARGETS: 0 */
     layout(location = 0) out vec4 color;
@@ -129,6 +130,29 @@ void main(){
             #endif
 
             color.rgb = cloudyFog(color.rgb, mat3(gbufferModelViewInverse) * viewPos, depth, scatterFactor);
+
+            #if defined FLOODFILL && defined SHADOWS
+            // colored blocklight scattering into the volumetric fog
+            {
+                vec3 fogPlayerPos = mat3(gbufferModelViewInverse) * viewPos;
+                vec3 voxelPos = mapVoxelPosInterp(fogPlayerPos);
+                if (clamp01(voxelPos) == voxelPos) {
+                    vec3 blocklight;
+                    if (frameCounter % 2 == 0) {
+                        blocklight = texture(floodfillVoxelMapTex2, voxelPos).rgb;
+                    } else {
+                        blocklight = texture(floodfillVoxelMapTex1, voxelPos).rgb;
+                    }
+
+                    blocklight = decodeFloodfillLight(blocklight);
+
+                    // glow scales with how much fog sits between the camera
+                    // and the surface; the 0.5 strength is tunable
+                    float fogAmount = 1.0 - exp(-getFogFactor() * length(fogPlayerPos));
+                    color.rgb += blocklight * fogAmount * 0.5;
+                }
+            }
+            #endif
             #endif
         #endif
         

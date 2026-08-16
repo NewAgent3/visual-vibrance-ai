@@ -87,6 +87,14 @@ vec3 rgb(vec3 c) {
   return c.z * mix(K.xxx, clamp01(p - K.xxx), c.y);
 }
 
+// decode colored light sampled from the floodfill volume and brighten it
+// perceptually (the volume stores raw RGB light)
+vec3 decodeFloodfillLight(vec3 color) {
+  color = hsv(color);
+  color.b = pow(color.b, 0.4) * 6.0;
+  return rgb(color);
+}
+
 // O is the ray origin, D is the direction
 // height is the height of the plane
 bool rayPlaneIntersection(vec3 O, vec3 D, float height, inout vec3 point) {

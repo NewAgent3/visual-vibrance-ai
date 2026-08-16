@@ -51,7 +51,8 @@ float getFogDensity(float height) {
 
 }
 
-vec3 cloudyFog(vec3 color, vec3 playerPos, float depth, vec3 scatterFactor) {
+// how much fog there currently is (shared by cloudyFog and the colored light)
+float getFogFactor() {
   // we want fog to occur between time = 15000 and time = 1000
   float fogFactor = 0.0;
   if (worldTime > 1000) {
@@ -62,8 +63,13 @@ vec3 cloudyFog(vec3 color, vec3 playerPos, float depth, vec3 scatterFactor) {
 
   fogFactor += wetness * 0.2;
   fogFactor += thunderStrength;
-
   fogFactor += BASE_FOG_DENSITY;
+
+  return fogFactor;
+}
+
+vec3 cloudyFog(vec3 color, vec3 playerPos, float depth, vec3 scatterFactor) {
+  float fogFactor = getFogFactor();
 
   if (fogFactor < 1e-6) {
     return color;

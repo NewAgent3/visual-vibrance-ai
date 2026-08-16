@@ -70,8 +70,7 @@ vec3 hangingSway(vec3 pos, vec3 midblock) {
 }
 
 vec3 floatingSway(vec3 pos) {
-  // stuff on the water
-  return pos;
+  // stuff on the water - bob with the water surface
   return pos + vec3(0.0, waveHeight(pos.xz) - 0.5, 0.0);
 }
 

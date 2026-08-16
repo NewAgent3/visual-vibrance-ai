@@ -325,8 +325,6 @@ void main() {
       );
     #endif
 
-    reflectionHit = reflectionHit;
-
     if (reflectionHit) {
       reflectedColor = texture(colortex0, reflectedPos.xy).rgb;
       #ifdef DISTANT_HORIZONS

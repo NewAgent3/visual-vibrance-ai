@@ -72,8 +72,6 @@ void main() {
     color = vec4(0.0);
     rainMask = vec4(1.0);
   }
-
-  rainMask = vec4(1.0);
 }
 
 #endif

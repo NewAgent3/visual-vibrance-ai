@@ -50,7 +50,7 @@ void main() {
     color = glcolor;
     color.rgb = pow(color.rgb, vec3(2.2));
   } else {
-    color.rgb = getSky(dir, false);
+    color.rgb = getSky(dir, true);
   }
 }
 

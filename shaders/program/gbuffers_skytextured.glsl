@@ -46,6 +46,11 @@ void main() {
   #ifdef WORLD_THE_END
   color.rgb *= 0.1;
   #else
+  if (isDay) {
+    // the sun is drawn procedurally in the sky pass
+    discard;
+  }
+
   #ifndef CUSTOM_SUN
   if (color.b < 0.3 && color.r > color.b) {
     // remove bloom

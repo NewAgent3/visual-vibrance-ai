@@ -5,9 +5,9 @@ vec3 sun(vec3 rayDir) {
   const float minSunCosTheta = cos(sunAngularRadius);
 
   float cosTheta = dot(rayDir, worldSunDir);
-  if (cosTheta >= minSunCosTheta) return sunRadiance;
-
-  return vec3(0.0);
+  // soft-edged disc so the rim doesn't alias
+  float disc = smoothstep(minSunCosTheta - 0.001, minSunCosTheta, cosTheta);
+  return sunRadiance * disc;
 }
 
 float fogify(float x, float w) {
@@ -48,6 +48,13 @@ vec3 getSky(vec3 color, vec3 rayDir, bool includeSun) {
   // #endif
 
   lum *= skyMultiplier;
+
+  #ifdef WORLD_OVERWORLD
+  // round sun disc; the moon keeps using the vanilla moon texture
+  if (isDay) {
+    lum += sun(rayDir);
+  }
+  #endif
 
   return lum;
 }

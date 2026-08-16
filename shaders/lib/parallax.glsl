@@ -86,8 +86,6 @@ vec2 getParallaxTexcoord(
 
   vec3 viewDir = normalize(-viewPos) * tbnMatrix;
 
-  float currentDepth = getDepth(texcoord, dx, dy);
-
   const float layerDepth = rcp(PARALLAX_SAMPLES * (1.0 - distFade)); // depth per layer
 
   vec3 rayStep =
@@ -103,8 +101,6 @@ vec2 getParallaxTexcoord(
     previousPos = pos;
     return texcoord;
   }
-
-  depth = getDepth(localToAtlas(pos.xy), dx, dy);
 
   while (depth - pos.z > rcp(255.0)) {
     previousPos = pos;

@@ -127,15 +127,19 @@ flat in vec4 textureBounds;
 
 #include "/lib/parallax.glsl"
 
-vec3 getMappedNormal(vec2 texcoord, int materialID) {
+vec3 getMappedNormal(vec2 texcoord, int materialID, out float ao) {
+  // sample once and reuse the blue channel (AO) instead of re-reading it later
+  vec4 normalSample = materialIsWater(materialID)
+    ? textureLod(normals, texcoord, 0)
+    : texture(normals, texcoord);
+
+  ao = normalSample.z;
+
   #if PBR_MODE == 0
   return tbnMatrix[2];
   #endif
 
-  vec3 mappedNormal = materialIsWater(materialID)
-    ? textureLod(normals, texcoord, 0).rgb
-    : texture(normals, texcoord).rgb;
-  mappedNormal = mappedNormal * 2.0 - 1.0;
+  vec3 mappedNormal = normalSample.rgb * 2.0 - 1.0;
   mappedNormal.z = sqrt(1.0 - dot(mappedNormal.xy, mappedNormal.xy)); // reconstruct z due to labPBR encoding
 
   return tbnMatrix * mappedNormal;
@@ -221,10 +225,8 @@ void main() {
   }
   #endif
 
-  vec3 mappedNormal = getMappedNormal(texcoord, materialID);
-  if (renderStage == MC_RENDER_STAGE_ENTITIES) {
-    vec3 mappedNormal = texture(normals, texcoord).rgb;
-  }
+  float normalAO;
+  vec3 mappedNormal = getMappedNormal(texcoord, materialID, normalAO);
 
   #if PBR_MODE == 0
   vec4 specularData = vec4(0.0);
@@ -236,7 +238,7 @@ void main() {
     specularData,
     materialID
   );
-  material.ao = texture(normals, texcoord).z;
+  material.ao = normalAO;
   #if ( ! defined MC_TEXTURE_FORMAT_LAB_PBR && defined INTEGRATED_EMISSION )
   if (
     material.emission == 0.0 &&
@@ -249,7 +251,9 @@ void main() {
 
   #endif
 
-  if (renderStage == MC_RENDER_STAGE_ENTITIES && entityId == 1) {
+  // entities mapped in entity.properties are fully emissive (flames, glow
+  // squid, magma cubes, etc. - including modded entities)
+  if (renderStage == MC_RENDER_STAGE_ENTITIES && entityId >= 1) {
     material.emission = 1.0;
   }
 
@@ -419,7 +423,7 @@ void main() {
     vec3 viewPos = (gbufferModelView * vec4(feetPlayerPos, 1.0)).xyz;
     #endif
 
-    #ifdef FLOODFILL
+    #if defined FLOODFILL && defined SHADOWS
 
     #ifdef DIRECTIONAL_LIGHTMAPS
     vec3 offset =
@@ -436,7 +440,7 @@ void main() {
     #endif
 
     if (sampleColoredLight) {
-      #ifdef FLOODFILL
+      #if defined FLOODFILL && defined SHADOWS
       vec3 blocklightColor;
       if (frameCounter % 2 == 0) {
         blocklightColor = texture(floodfillVoxelMapTex2, voxelPosInterp).rgb;
@@ -444,9 +448,7 @@ void main() {
         blocklightColor = texture(floodfillVoxelMapTex1, voxelPosInterp).rgb;
       }
 
-      blocklightColor = hsv(blocklightColor);
-      blocklightColor.b = pow(blocklightColor.b, 0.4) * 6.0;
-      blocklightColor = rgb(blocklightColor);
+      blocklightColor = decodeFloodfillLight(blocklightColor);
 
       if (
         luminance(blocklightColor) < 0.2 &&

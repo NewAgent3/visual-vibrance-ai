@@ -23,25 +23,25 @@ vec3 gatherLight(ivec3 voxelPos){
   );
 
   vec3 light = vec3(0.0);
-
+  int samples = 0;
 
   for(int i = 0; i < 6; i++){
     ivec3 offsetPos = voxelPos + sampleOffsets[i] + getPreviousVoxelOffset();
 
-    VoxelData sampleData = decodeVoxelData(imageLoad(voxelMap, offsetPos).r);
-
-    // if(sampleData.opacity == 1.0){
-    //   continue;
-    // }
+    // imageLoad is undefined outside the volume, so skip those neighbours
+    if (!isWithinVoxelBounds(offsetPos)) continue;
 
     if(frameCounter % 2 == 0){
-      light += imageLoad(floodfillVoxelMap1, offsetPos).rgb ;
+      light += imageLoad(floodfillVoxelMap1, offsetPos).rgb;
     } else {
       light += imageLoad(floodfillVoxelMap2, offsetPos).rgb;
     }
+    samples++;
   }
 
-  light /= 6.0;
+  if (samples == 0) return vec3(0.0);
+
+  light /= float(samples);
   light *= 0.99;
 
   return light;
